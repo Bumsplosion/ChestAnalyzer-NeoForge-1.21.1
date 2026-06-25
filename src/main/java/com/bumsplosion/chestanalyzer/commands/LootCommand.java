@@ -22,9 +22,7 @@ public class LootCommand {
                 Commands.literal("analyzeloot")
                         .requires(s -> s.hasPermission(2))
 
-                        // =====================
-                        // RUN ROOT FIX
-                        // =====================
+                        // RUN COMMAND + AUTOSUGGEST
                         .then(Commands.literal("run")
 
                                 .executes(ctx -> {
@@ -51,10 +49,10 @@ public class LootCommand {
                                         })
                                         .then(Commands.argument("iterations", IntegerArgumentType.integer(1))
                                                 .suggests((ctx, builder) -> {
-                                                    builder.suggest("100");
-                                                    builder.suggest("500");
+                                                    builder.suggest("250");
                                                     builder.suggest("1000");
                                                     builder.suggest("2500");
+                                                    builder.suggest("5000");
                                                     builder.suggest("10000");
                                                     return builder.buildFuture();
                                                 })
@@ -84,10 +82,8 @@ public class LootCommand {
                                         )
                                 )
                         )
-
-                        // =====================
-                        // DEEP + AUTO EXPORT
-                        // =====================
+            
+                        // DEEP SCAN + AUTO EXPORT
                         .then(Commands.literal("export")
                                 .then(Commands.argument("table", ResourceLocationArgument.id())
                                         .suggests((ctx, builder) -> {
@@ -130,9 +126,8 @@ public class LootCommand {
                                         )
                                 )
                         )
-                        // =====================
+            
                         // STRUCTURES EXPORT
-                        // =====================
                         .then(Commands.literal("structures")
                                 .executes(ctx -> {
 
