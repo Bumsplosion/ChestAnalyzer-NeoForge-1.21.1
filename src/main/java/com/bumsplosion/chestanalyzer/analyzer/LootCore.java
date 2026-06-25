@@ -7,7 +7,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-
 import java.util.*;
 
 public class LootCore {
@@ -34,18 +33,11 @@ public class LootCore {
     ) {}
 
     // =========================
-    // SAFE TABLE ACCESS
-    // =========================
-    private static LootTable getLootTable(ServerLevel level, ResourceLocation id) {
-        return LootRegistry.getLootTable(level, id);
-    }
-
-    // =========================
     // SIMULATION CORE
     // =========================
     public static Result simulate(ServerLevel level, ResourceLocation tableId, int iterations) {
 
-        LootTable table = getLootTable(level, tableId);
+        LootTable table = LootRegistry.getLootTable(level, tableId);
 
         Map<String, Integer> appearance = new HashMap<>();
         Map<String, Integer> total = new HashMap<>();
@@ -77,7 +69,7 @@ public class LootCore {
     }
 
     // =========================
-    // EXPORT TABLE BUILDER
+    // EXPORT TABLE
     // =========================
     public static TableExport buildTable(Result r) {
 
@@ -105,34 +97,5 @@ public class LootCore {
         }
 
         return new TableExport(items, r.iterations);
-    }
-
-    // =========================
-    // DEEP SCAN
-    // =========================
-    public static TableExport runDeep(ServerLevel level, ResourceLocation tableId, int maxIterations) {
-
-        int[] stages = new int[]{100, 250, 500, 1000, maxIterations};
-
-        Map<String, Integer> appearance = new HashMap<>();
-        Map<String, Integer> total = new HashMap<>();
-        int totalIterations = 0;
-
-        for (int iters : stages) {
-
-            if (iters > maxIterations) continue;
-
-            Result r = simulate(level, tableId, iters);
-
-            totalIterations += r.iterations;
-
-            for (var e : r.appearance.entrySet())
-                appearance.merge(e.getKey(), e.getValue(), Integer::sum);
-
-            for (var e : r.total.entrySet())
-                total.merge(e.getKey(), e.getValue(), Integer::sum);
-        }
-
-        return buildTable(new Result(appearance, total, totalIterations));
     }
 }

@@ -10,9 +10,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import com.bumsplosion.chestanalyzer.analyzer.LootCore;
 import com.bumsplosion.chestanalyzer.analyzer.LootExports;
-import java.nio.file.Files;
+import java.util.Map;
+import java.util.HashMap;
 import java.nio.file.Path;
-import java.util.TreeMap;
 
 public class LootCommand {
 
@@ -23,17 +23,50 @@ public class LootCommand {
                         .requires(s -> s.hasPermission(2))
 
                         // =====================
-                        // RUN ROOT FIX
+                        // RUN_ALL
+                        // =====================
+                        .then(Commands.literal("run_all")
+                                .then(Commands.argument("iterations", IntegerArgumentType.integer(1))
+                                        .executes(ctx -> {
+
+                                            var source = ctx.getSource();
+                                            var level = source.getLevel();
+                                            int iterations = IntegerArgumentType.getInteger(ctx, "iterations");
+
+                                            Map<String, LootCore.TableExport> results = new HashMap<>();
+
+                                            var server = source.getServer();
+
+                                            server.reloadableRegistries()
+                                                    .getKeys(Registries.LOOT_TABLE)
+                                                    .forEach(id -> {
+
+                                                        String full = id.toString();
+
+                                                        if (!full.startsWith("minecraft:chests/")) return;
+
+                                                        var result = LootCore.simulate(level, id, iterations);
+                                                        var table = LootCore.buildTable(result);
+
+                                                        results.put(full, table);
+                                                    });
+
+                                            LootExports.LAST_RESULTS = results;
+
+                                            source.sendSuccess(() ->
+                                                    Component.literal(
+                                                            "Completed run_all on " + results.size() + " loot tables"
+                                                    ), false);
+
+                                            return 1;
+                                        })
+                                )
+                        )
+
+                        // =====================
+                        // RUN
                         // =====================
                         .then(Commands.literal("run")
-
-                                .executes(ctx -> {
-                                    ctx.getSource().sendFailure(
-                                            Component.literal("Usage: /analyzeloot run <table> <iterations>")
-                                    );
-                                    return 0;
-                                })
-
                                 .then(Commands.argument("table", ResourceLocationArgument.id())
                                         .suggests((ctx, builder) -> {
 
@@ -50,14 +83,6 @@ public class LootCommand {
                                             return builder.buildFuture();
                                         })
                                         .then(Commands.argument("iterations", IntegerArgumentType.integer(1))
-                                                .suggests((ctx, builder) -> {
-                                                    builder.suggest("100");
-                                                    builder.suggest("500");
-                                                    builder.suggest("1000");
-                                                    builder.suggest("2500");
-                                                    builder.suggest("10000");
-                                                    return builder.buildFuture();
-                                                })
                                                 .executes(ctx -> {
 
                                                     var source = ctx.getSource();
@@ -68,6 +93,9 @@ public class LootCommand {
 
                                                     var result = LootCore.simulate(level, tableId, iterations);
                                                     var table = LootCore.buildTable(result);
+
+                                                    // STORE LAST RESULT
+                                                    LootExports.LAST_RESULTS = Map.of(tableId.toString(), table);
 
                                                     source.sendSuccess(() ->
                                                             Component.literal("Loot Scan Complete → " + tableId), false);
@@ -86,52 +114,27 @@ public class LootCommand {
                         )
 
                         // =====================
-                        // DEEP + AUTO EXPORT
+                        // EXPORT
                         // =====================
                         .then(Commands.literal("export")
-                                .then(Commands.argument("table", ResourceLocationArgument.id())
-                                        .suggests((ctx, builder) -> {
+                                .then(Commands.argument("filename", StringArgumentType.word())
+                                        .executes(ctx -> {
 
-                                            var server = ctx.getSource().getServer();
+                                            var source = ctx.getSource();
+                                            String filename = StringArgumentType.getString(ctx, "filename");
 
-                                            server.reloadableRegistries()
-                                                    .getKeys(Registries.LOOT_TABLE)
-                                                    .forEach(id -> {
-                                                        if (id.toString().startsWith("minecraft:chests/")) {
-                                                            builder.suggest(id.toString());
-                                                        }
-                                                    });
+                                            Path file = LootExports.exportLatest(filename);
 
-                                            return builder.buildFuture();
+                                            source.sendSuccess(() ->
+                                                    Component.literal("Exported → " + file.toAbsolutePath()), false);
+
+                                            return 1;
                                         })
-                                        .then(Commands.argument("maxIterations", IntegerArgumentType.integer(1))
-                                                .then(Commands.argument("filename", StringArgumentType.word())
-                                                        .executes(ctx -> {
-
-                                                            var source = ctx.getSource();
-                                                            var level = source.getLevel();
-
-                                                            var tableId = ResourceLocationArgument.getId(ctx, "table");
-                                                            int max = IntegerArgumentType.getInteger(ctx, "maxIterations");
-                                                            String filename = StringArgumentType.getString(ctx, "filename");
-
-                                                            var result = LootExports.deepScan(level, tableId, max);
-
-                                                            LootExports.exportDeep(result, tableId.toString(), filename);
-                                                            LootExports.LAST_RESULT = result;
-                                                            LootExports.LAST_TYPE = "deep";
-
-                                                            source.sendSuccess(() ->
-                                                                    Component.literal("Deep scan exported"), false);
-
-                                                            return 1;
-                                                        })
-                                                )
-                                        )
                                 )
                         )
+
                         // =====================
-                        // STRUCTURES EXPORT
+                        // STRUCTURES
                         // =====================
                         .then(Commands.literal("structures")
                                 .executes(ctx -> {
@@ -139,63 +142,12 @@ public class LootCommand {
                                     var source = ctx.getSource();
                                     var server = source.getServer();
 
-                                    try {
-                                        TreeMap<String, String> structures = new TreeMap<>();
+                                    Path file = LootExports.exportStructures(server);
 
-                                        server.reloadableRegistries()
-                                                .getKeys(Registries.LOOT_TABLE)
-                                                .forEach(id -> {
+                                    source.sendSuccess(() ->
+                                            Component.literal("Exported → " + file.toAbsolutePath()),false);
 
-                                                    String full = id.toString();
-
-                                                    if (full.contains("chests/")) {
-                                                        String shortName = full
-                                                                .replace("minecraft:chests/", "")
-                                                                .replace("chests/", "");
-
-                                                        structures.put(shortName, full);
-                                                    }
-                                                });
-
-                                        Path folder = Path.of("loot_exports");
-                                        Files.createDirectories(folder);
-
-                                        Path out = folder.resolve("loot_structures.json");
-
-                                        StringBuilder json = new StringBuilder("{\n");
-
-                                        boolean first = true;
-                                        for (var entry : structures.entrySet()) {
-                                            if (!first) json.append(",\n");
-
-                                            json.append("  \"")
-                                                    .append(entry.getKey())
-                                                    .append("\": \"")
-                                                    .append(entry.getValue())
-                                                    .append("\"");
-
-                                            first = false;
-                                        }
-
-                                        json.append("\n}");
-
-                                        Files.writeString(out, json.toString());
-
-                                        source.sendSuccess(() ->
-                                                Component.literal(
-                                                        "Exported " + structures.size()
-                                                                + " structures to loot_exports/loot_structures.json"
-                                                ), false);
-
-                                        return 1;
-
-                                    } catch (Exception e) {
-                                        source.sendFailure(
-                                                Component.literal("Structure export failed: " + e.getMessage())
-                                        );
-                                        e.printStackTrace();
-                                        return 0;
-                                    }
+                                    return 1;
                                 })
                         )
         );

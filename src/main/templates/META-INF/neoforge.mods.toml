@@ -46,18 +46,21 @@ displayName="${mod_name}" #mandatory
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-A mod for modpack creators. Allows commands for loot chest viewing & management. Very useful if you want to modify any loot tables from chests
+A mod for modpack creators. Allows commands for viewing & exporting loot chest contents. Very useful if you want to modify any loot tables from chests.
 
 Commands:
 
 /analyzeloot run <loot_table> <iterations>
--Runs a loot simulation for a specific location or structure's chests and displays drop chances in chat
+-Runs a loot simulation for a specific structure's chests and displays drop chances in chat
 
-/analyzeloot export <loot_table> <iterations> [file_name]
--Runs a more advanced scan for a location or structure and exports that information to a .json file
+/analyzeloot run_all <iterations>
+-Runs loot simulations for all loot chests. After running this command, use /analyzeloot export <file_name> to view these results
 
-/analyzeloot structure
--Generates a list of all potential structures or locations with chests that have loot tables and stores it in your instance as a .json file
+/analyzeloot export <file_name>
+-Exports the information from the most recently run command to a .json file
+
+/analyzeloot structures
+-Generates a list of all potential structures with chests that have loot tables and exports it to a .json file
 '''
 
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.

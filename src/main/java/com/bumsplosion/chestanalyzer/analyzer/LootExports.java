@@ -2,78 +2,27 @@ package com.bumsplosion.chestanalyzer.analyzer;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.core.registries.Registries;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.HashMap;
 
 public class LootExports {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    public static Object LAST_RESULT;
-    public static String LAST_TYPE;
-
     // =========================
-    // DEEP EXPORT MODEL
+    // EXPORT + LAST RESULTS
     // =========================
-    public record DeepExport(
-            String table,
-            int iterations,
-            LootCore.TableExport data
-    ) {}
+    public static Map<String, LootCore.TableExport> LAST_RESULTS = new HashMap<>();
 
-    // =========================
-    // DEEP SCAN ENTRY
-    // =========================
-    public static LootCore.TableExport deepScan(ServerLevel level, ResourceLocation id, int max) {
-        return LootCore.runDeep(level, id, max);
-    }
+    public static Path exportLatest(String filename) {
 
-    // =========================
-    // EXPORT DEEP
-    // =========================
-    public static void exportDeep(
-            LootCore.TableExport result,
-            String tableId,
-            String fileName
-    ) {
-
-        try {
-            String safe = (fileName == null || fileName.isBlank())
-                    ? "deep_" + tableId.replace(":", "_") + "_" + System.currentTimeMillis()
-                    : fileName.replaceAll("[^a-zA-Z0-9-_]", "_");
-
-            DeepExport export = new DeepExport(
-                    tableId,
-                    result.iterations(),
-                    result
-            );
-
-            Path folder = Path.of("loot_exports");
-            Files.createDirectories(folder);
-
-            Files.writeString(folder.resolve(safe + ".json"), GSON.toJson(export));
-
-        } catch (Exception e) {
-            throw new RuntimeException("Deep export failed: " + e.getMessage(), e);
-        }
-    }
-
-    // =========================
-    // EXPORT LATEST
-    // =========================
-    public static void exportLatest(String filename) {
-
-        if (LAST_RESULT == null) {
-            throw new IllegalStateException("No previous result");
+        if (LAST_RESULTS == null || LAST_RESULTS.isEmpty()) {
+            throw new IllegalStateException("No previous analyzeloot results found.");
         }
 
         try {
@@ -82,37 +31,39 @@ public class LootExports {
             Path folder = Path.of("loot_exports");
             Files.createDirectories(folder);
 
-            Map<String, Object> wrapper = new HashMap<>();
-            wrapper.put("type", LAST_TYPE);
-            wrapper.put("data", LAST_RESULT);
+            Map<String, Object> wrapper = new TreeMap<>();
+            wrapper.put("tables", LAST_RESULTS);
 
-            Files.writeString(folder.resolve(safe + ".json"), GSON.toJson(wrapper));
+            Path file = folder.resolve(safe + ".json");
+
+            Files.writeString(file, GSON.toJson(wrapper));
+
+            return file;
 
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Export failed: " + e.getMessage(), e);
         }
     }
 
     // =========================
     // STRUCTURE EXPORT
     // =========================
-    public static void exportStructures(MinecraftServer server) {
+    public static Path exportStructures(MinecraftServer server) {
 
         Map<String, Map<String, String>> out = new TreeMap<>();
 
-        server.registryAccess()
-                .registryOrThrow(Registries.LOOT_TABLE)
-                .keySet()
+        server.reloadableRegistries()
+                .getKeys(Registries.LOOT_TABLE)
                 .forEach(id -> {
 
                     String path = id.getPath();
+                    String namespace = id.getNamespace();
 
                     if (!path.startsWith("chests/")) return;
 
                     String structure = path.substring("chests/".length());
-                    String mod = id.getNamespace();
 
-                    out.computeIfAbsent(mod, k -> new TreeMap<>())
+                    out.computeIfAbsent(namespace, k -> new TreeMap<>())
                             .put(structure, id.toString());
                 });
 
@@ -122,6 +73,8 @@ public class LootExports {
 
             Path file = folder.resolve("loot_structures.json");
             Files.writeString(file, GSON.toJson(out));
+
+            return file;
 
         } catch (Exception e) {
             throw new RuntimeException("Structure export failed: " + e.getMessage(), e);

@@ -1,25 +1,15 @@
+A mod for modpack creators. Allows commands for viewing & exporting loot chest contents. Very useful if you want to modify any loot tables from chests.
 
-Installation information
-=======
+Commands:
 
-This template repository can be directly cloned to get you started with a new
-mod. Simply create a new repository cloned from this one, by following the
-instructions provided by [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
+/analyzeloot run <loot_table> <iterations>
+-Runs a loot simulation for a specific structure's chests and displays drop chances in chat
 
-Once you have your clone, simply open the repository in the IDE of your choice. The usual recommendation for an IDE is either IntelliJ IDEA or Eclipse.
+/analyzeloot run_all <iterations>
+-Runs loot simulations for all loot chests. After running this command, use /analyzeloot export <file_name> to view these results
 
-If at any point you are missing libraries in your IDE, or you've run into problems you can
-run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean` to reset everything 
-{this does not affect your code} and then start the process again.
+/analyzeloot export <file_name>
+-Exports the information from the most recently run command to a .json file
 
-Mapping Names:
-============
-By default, the MDK is configured to use the official mapping names from Mojang for methods and fields 
-in the Minecraft codebase. These names are covered by a specific license. All modders should be aware of this
-license. For the latest license text, refer to the mapping file itself, or the reference copy here:
-https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
-
-Additional Resources: 
-==========
-Community Documentation: https://docs.neoforged.net/  
-NeoForged Discord: https://discord.neoforged.net/
+/analyzeloot structures
+-Generates a list of all potential structures with chests that have loot tables and exports it to a .json file
