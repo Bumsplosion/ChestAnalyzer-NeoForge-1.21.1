@@ -69,7 +69,7 @@ public class LootCore {
         return new Result(appearance, total, iterations);
     }
 
-    // EXPORT TABLE BUILDER
+    // LOOT TABLE BUILDER
     public static TableExport buildTable(Result r) {
 
         Map<String, ItemStats> items = new LinkedHashMap<>();
