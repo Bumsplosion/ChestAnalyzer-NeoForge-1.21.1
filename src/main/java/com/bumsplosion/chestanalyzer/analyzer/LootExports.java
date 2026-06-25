@@ -2,12 +2,10 @@ package com.bumsplosion.chestanalyzer.analyzer;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.core.registries.Registries;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -21,25 +19,17 @@ public class LootExports {
     public static Object LAST_RESULT;
     public static String LAST_TYPE;
 
-    // =========================
-    // DEEP EXPORT MODEL
-    // =========================
+    // DEEP SCAN EXPORT
     public record DeepExport(
             String table,
             int iterations,
             LootCore.TableExport data
     ) {}
 
-    // =========================
-    // DEEP SCAN ENTRY
-    // =========================
     public static LootCore.TableExport deepScan(ServerLevel level, ResourceLocation id, int max) {
         return LootCore.runDeep(level, id, max);
     }
 
-    // =========================
-    // EXPORT DEEP
-    // =========================
     public static void exportDeep(
             LootCore.TableExport result,
             String tableId,
@@ -67,9 +57,7 @@ public class LootExports {
         }
     }
 
-    // =========================
     // EXPORT LATEST
-    // =========================
     public static void exportLatest(String filename) {
 
         if (LAST_RESULT == null) {
@@ -93,9 +81,7 @@ public class LootExports {
         }
     }
 
-    // =========================
     // STRUCTURE EXPORT
-    // =========================
     public static void exportStructures(MinecraftServer server) {
 
         Map<String, Map<String, String>> out = new TreeMap<>();
