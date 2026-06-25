@@ -7,14 +7,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-
 import java.util.*;
 
 public class LootCore {
 
-    // =========================
     // DATA MODELS
-    // =========================
     public record ItemStats(
             double chance,
             double avgCount,
@@ -33,16 +30,12 @@ public class LootCore {
             int iterations
     ) {}
 
-    // =========================
-    // SAFE TABLE ACCESS
-    // =========================
+    // LOOT TABLE ACCESS
     private static LootTable getLootTable(ServerLevel level, ResourceLocation id) {
         return LootRegistry.getLootTable(level, id);
     }
 
-    // =========================
     // SIMULATION CORE
-    // =========================
     public static Result simulate(ServerLevel level, ResourceLocation tableId, int iterations) {
 
         LootTable table = getLootTable(level, tableId);
@@ -76,9 +69,7 @@ public class LootCore {
         return new Result(appearance, total, iterations);
     }
 
-    // =========================
     // EXPORT TABLE BUILDER
-    // =========================
     public static TableExport buildTable(Result r) {
 
         Map<String, ItemStats> items = new LinkedHashMap<>();
@@ -107,9 +98,7 @@ public class LootCore {
         return new TableExport(items, r.iterations);
     }
 
-    // =========================
     // DEEP SCAN
-    // =========================
     public static TableExport runDeep(ServerLevel level, ResourceLocation tableId, int maxIterations) {
 
         int[] stages = new int[]{100, 250, 500, 1000, maxIterations};
