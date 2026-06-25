@@ -1,5 +1,5 @@
 
-A mod for modpack creators. Allows commands for loot chest viewing & management. Very useful if you want to modify any loot tables from chests
+A mod for modpack creators. Allows commands for obtaining an easy overview of loot chest contents. Very useful if you want to modify any loot tables from chests
 
 Commands:
 
